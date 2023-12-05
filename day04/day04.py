@@ -33,7 +33,7 @@ cards_stack = list(card_matches.items())
 i = 0
 while i < len(cards_stack):
     card_id = cards_stack[i][0]
-    cards_stack.extend(list(map(lambda i: cards_stack[i], range(card_id, card_id + card_matches[card_id]))))
+    cards_stack.extend(cards_stack[card_id:card_id + card_matches[card_id]])
     i += 1
 
 print(len(cards_stack))
