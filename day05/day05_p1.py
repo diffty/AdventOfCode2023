@@ -39,7 +39,7 @@ humidity-to-location map:
 '''
 
 data = test_data.strip()
-data = open(os.path.dirname(__file__) + "/data.txt").read().strip()
+#data = open(os.path.dirname(__file__) + "/data.txt").read().strip()
 
 d = re.compile(r"([a-z\-]*)(?: ([a-z]+))?:((?:[ \n\t\r]*\d+)*)", re.I)
 d2 = re.compile(r"([0-9a-z]+)(?:-to-([0-9a-z]+))?", re.I)
@@ -91,3 +91,8 @@ def m(start_name, value):
 
 
 print(min([m("seed", s) for s in seeds]))
+
+# PART 2
+import itertools
+seed_intervals = list(itertools.chain.from_iterable(map(lambda i: (seeds[i*2], seeds[i*2] + seeds[i*2+1]), range(int(len(seeds)/2)))))
+print(min([m("seed", s) for s in seed_intervals]))
