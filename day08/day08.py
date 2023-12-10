@@ -38,9 +38,10 @@ XXX = (XXX, XXX)
 GENERAL_PARSER_REGEX = re.compile(r"([RL]+)\s+(.+)", re.I | re.DOTALL)
 MAP_PARSER_REGEX = re.compile(r"(\w+) = \((\w+), (\w+)\)", re.I | re.DOTALL)
 
+
+# PARSING DATA
 data = test_data2.strip()
 data = open(os.path.dirname(__file__) + "/data.txt").read().strip()
-#data = test_data3.strip()
 
 map_nodes = {}
 
@@ -54,8 +55,7 @@ if general_reg_res:
 directions = list(map(lambda l: {"L": 0, "R": 1}[l], general_reg_res.group(1)))
 
 
-# PART 1
-'''
+### PART 1
 i = 0
 directions_cursor = 0
 
@@ -68,53 +68,47 @@ while curr_node_name != "ZZZ":
     i += 1
 
 print(i)
-'''
 
-# PART 2
 
+### PART 2
+
+# FINDING ITERATION NUMBER WHERE PATH LOOPS
+curr_nodes_name_list = list(filter(lambda n: n.endswith('A'), map_nodes))
 directions_cursor = 0
-
-start_nodes_names = list(filter(lambda n: n.endswith('A'), map_nodes))
-#print(start_nodes_names)
-
-end_nodes_names = list(filter(lambda n: n.endswith('Z'), map_nodes))
-#print(end_nodes_names)
-
-curr_nodes_name_list = list(start_nodes_names)
-
-i = 0
-
-'''
-while not all([n.endswith("Z") for n in curr_nodes_name_list]):    
-    for node_num, node_name in enumerate(curr_nodes_name_list):
-        curr_node = map_nodes[node_name]
-        curr_nodes_name_list[node_num] = curr_node[directions[directions_cursor]]
-
-    #print(curr_nodes_name_list)
-
-    directions_cursor = (directions_cursor + 1) % len(directions)
-    i += 1
-'''
+delta_list = []
 
 for node_n in range(len(curr_nodes_name_list)):
-    i = 0
-    print("-"*10, node_n)
+    curr_i = 0
+    prev_i = 0
+    curr_delta = 0
+    prev_delta = 0
+
     node_name = curr_nodes_name_list[node_n]
 
-    prev_i = 0
-
-    while i < 1000000:  #not node_name.endswith('Z'):
+    while curr_delta != prev_delta or curr_delta == 0:
         curr_node = map_nodes[node_name]
         node_name = curr_node[directions[directions_cursor]]
-
-        #print(curr_nodes_name_list)
 
         directions_cursor = (directions_cursor + 1) % len(directions)
 
         if node_name.endswith('Z'):
-            print(i - prev_i, i)
-            prev_i = i
+            prev_delta = curr_delta
+            curr_delta = curr_i - prev_i
+            prev_i = curr_i
 
-        i += 1
+        curr_i += 1
 
-#print(i)
+    delta_list.append(curr_delta)
+
+
+# CALCULATE FIRST COMMON MULTIPLE BETWEEN ALL DELTAS
+curr_delta = delta_list[0]
+
+while len(delta_list) >= 2:
+    while curr_delta % delta_list[1] != 0:
+        curr_delta += delta_list[0]
+
+    delta_list = delta_list[1:]
+    delta_list[0] = curr_delta
+
+print(delta_list[0])
