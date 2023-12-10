@@ -38,40 +38,43 @@ humidity-to-location map:
 56 93 4
 '''
 
-data = test_data.strip()
-#data = open(os.path.dirname(__file__) + "/data.txt").read().strip()
 
-d = re.compile(r"([a-z\-]*)(?: ([a-z]+))?:((?:[ \n\t\r]*\d+)*)", re.I)
-d2 = re.compile(r"([0-9a-z]+)(?:-to-([0-9a-z]+))?", re.I)
-
+# VARS & DATA STRUCTURES
 parsed_data = {}
+mappings = {}
+mappers = {}
 
-for it in d.finditer(data):
+
+# REGEXES
+DATA_PARSER1_REGEX = re.compile(r"([a-z\-]*)(?: ([a-z]+))?:((?:[ \n\t\r]*\d+)*)", re.I)
+DATA_PARSER2_REGEX = re.compile(r"([0-9a-z]+)(?:-to-([0-9a-z]+))?", re.I)
+
+
+# DATA PARSING
+data = test_data.strip()
+data = open(os.path.dirname(__file__) + "/data.txt").read().strip()
+
+for it in DATA_PARSER1_REGEX.finditer(data):
     var_name, var_type, var_value = it.groups()
     parsed_data[var_name] = (var_type, var_value.strip())
 
 seeds = list(map(int, parsed_data["seeds"][1].split()))
 
-def remap(value, src_start, src_end, dst_start, dst_end):
-    return dst_start + ((value - src_start) / (src_end - src_start)) * (dst_end - dst_start)
 
-mappings = {}
-mappers = {}
-
+# DATA PROCESSING
 for var_name, var_content in parsed_data.items():
     var_type, var_value = var_content
     if var_type == "map":
-        src, dst = d2.search(var_name).groups()
+        src, dst = DATA_PARSER2_REGEX.search(var_name).groups()
         
         mappings[src] = (dst, list(map(str.split, var_value.split("\n"))))
-        
 
-def make_mapping(dest_range_start, source_range_start, range_length):
-    return dict(zip(list(range(dest_range_start, dest_range_start + range_length)),
-                    list(range(source_range_start, source_range_start + range_length))))
-    
 
-def m(start_name, value):
+# REMAPPING
+def remap(value, src_start, src_end, dst_start, dst_end):
+    return dst_start + ((value - src_start) / (src_end - src_start)) * (dst_end - dst_start)
+
+def remap_category_value(start_name, value):
     curr_mapping = mappings[start_name]
 
     while curr_mapping is not None:
@@ -90,9 +93,4 @@ def m(start_name, value):
     return value
 
 
-print(min([m("seed", s) for s in seeds]))
-
-# PART 2
-import itertools
-seed_intervals = list(itertools.chain.from_iterable(map(lambda i: (seeds[i*2], seeds[i*2] + seeds[i*2+1]), range(int(len(seeds)/2)))))
-print(min([m("seed", s) for s in seed_intervals]))
+print(min([remap_category_value("seed", s) for s in seeds]))
