@@ -84,6 +84,7 @@ curr_nodes_name_list = list(start_nodes_names)
 
 i = 0
 
+'''
 while not all([n.endswith("Z") for n in curr_nodes_name_list]):    
     for node_num, node_name in enumerate(curr_nodes_name_list):
         curr_node = map_nodes[node_name]
@@ -93,5 +94,27 @@ while not all([n.endswith("Z") for n in curr_nodes_name_list]):
 
     directions_cursor = (directions_cursor + 1) % len(directions)
     i += 1
+'''
 
-print(i)
+for node_n in range(len(curr_nodes_name_list)):
+    i = 0
+    print("-"*10, node_n)
+    node_name = curr_nodes_name_list[node_n]
+
+    prev_i = 0
+
+    while i < 1000000:  #not node_name.endswith('Z'):
+        curr_node = map_nodes[node_name]
+        node_name = curr_node[directions[directions_cursor]]
+
+        #print(curr_nodes_name_list)
+
+        directions_cursor = (directions_cursor + 1) % len(directions)
+
+        if node_name.endswith('Z'):
+            print(i - prev_i, i)
+            prev_i = i
+
+        i += 1
+
+#print(i)
