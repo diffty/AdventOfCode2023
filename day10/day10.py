@@ -208,13 +208,14 @@ for y in range(len(io_map)):
     #print(f"y={y}: {''.join(io_map[y])}")
 
 #for tile_pos in open_tiles_list:
-next_tiles = list(open_tiles_list)
 
 print()
 display_map(io_map)
 
 
-def fill(tile_map, fill_tile, replacable_tile):
+def fill(tile_map, start_tiles, fill_tile, replacable_tile):
+    next_tiles = list(start_tiles)
+
     while len(next_tiles) > 0:
         tile_pos = next_tiles.pop(0)
 
@@ -227,7 +228,7 @@ def fill(tile_map, fill_tile, replacable_tile):
                         next_tiles.append(next_tile_pos)
 
 
-fill(io_map, "O", ["I"])
+fill(io_map, open_tiles_list, "O", ["I"])
 
 print()
 display_map(io_map)
