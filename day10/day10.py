@@ -2,6 +2,8 @@ import os
 import sys
 import copy
 import itertools
+import copy
+import time
 
 
 test_data = '''
@@ -25,8 +27,23 @@ L.L7LFJ|||||FJL7||LJ
 L7JLJL-JLJLJL--JLJ.L
 '''
 
+def _print(text, x=0, y=0):
+    sys.stdout.write("\033[{};{}H".format(y, x))
+    #sys.stdout.write("\033[K")
+    sys.stdout.write(text)
+    sys.stdout.flush()
+
 
 def display_map(m):
+    for y in range(len(m)):
+        for x in range(len(m[0])):
+            sys.stdout.write(m[y][x])
+        sys.stdout.write('\n')
+    sys.stdout.write('\n')
+
+
+
+def display_map_old(m):
     for y in range(len(m)):
         print("".join(m[y]))
 
@@ -86,6 +103,8 @@ nice_tiles = {
     "S": "S",
 }
 
+directions = [(0, -1), (1,  0), (0,  1), (-1, 0)]
+
 curr_pos = starting_point_pos
 prev_pos = None
 
@@ -95,10 +114,14 @@ i = 0
 
 distance_map[curr_pos[1]][curr_pos[0]] = 0
 nice_map = [[" "]*len(tiles[0]) for y in range(len(tiles))]
+io_map = [["I"]*len(tiles[0]) for y in range(len(tiles))]
 
+open_tiles_list = []
+
+directions_list = []
 
 while not end_reached:
-    for next_dir in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+    for next_dir in directions:
         next_pos = (curr_pos[0] + next_dir[0], curr_pos[1] + next_dir[1])
         direction = (next_pos[0] - curr_pos[0], next_pos[1] - curr_pos[1])
 
@@ -109,12 +132,10 @@ while not end_reached:
             next_t = tiles[next_pos[1]][next_pos[0]]
             curr_t = tiles[curr_pos[1]][curr_pos[0]]
 
-            #print(f"{curr_t} ({curr_pos}) => {next_t} ({next_pos})")
-
             next_tile_rules = tiles_type.get(next_t, None)
             curr_tile_rules = tiles_type.get(curr_t, None)
 
-            if (next_tile_rules is None or next_tile_rules[0](direction)) \
+            if      (next_tile_rules is None or next_tile_rules[0](direction)) \
                 and (curr_tile_rules is None or curr_tile_rules[1](direction)):
 
                 if next_t == "S":
@@ -122,95 +143,51 @@ while not end_reached:
 
                 distance_map[curr_pos[1]][curr_pos[0]] = i
                 nice_map[curr_pos[1]][curr_pos[0]] = nice_tiles.get(curr_t, " ")
+                
+                enter_dir = None
+
+                if prev_pos is not None:
+                    enter_dir = (curr_pos[0] - prev_pos[0], curr_pos[1] - prev_pos[1])
+
+                exit_dir = direction
+                
+                directions_list.append((curr_pos, enter_dir, exit_dir))
+
+                io_map[curr_pos[1]][curr_pos[0]] = "P"
 
                 prev_pos = curr_pos
                 curr_pos = next_pos
+
                 break
 
     i += 1
 
-    # preview_buffer = ""
 
-    # for y in range(len(tiles)):
-    #     for x in range(len(tiles[x])):
-    #         if curr_pos == (x, y):
-    #             preview_buffer += "@"
-    #         else:
-    #             preview_buffer += tiles[y][x]
-    #     preview_buffer += '\n'
+def _tag_tile_using_dir(dir):
+    right_dir = directions[(directions.index(dir) + 1) % len(directions)]
+    right_pos = (curr_pos[0] + right_dir[0], curr_pos[1] + right_dir[1])
+
+    if right_pos[0] >= 0 and right_pos[0] < len(tiles[0]) and right_pos[1] >= 0 and right_pos[1] < len(tiles) and io_map[right_pos[1]][right_pos[0]] != "P":
+        io_map[right_pos[1]][right_pos[0]] = "O"
+        open_tiles_list.append(right_pos)
+
+
+for tile_info in directions_list:
+    curr_pos, enter_dir, exit_dir = tile_info
+
+    if enter_dir:
+        _tag_tile_using_dir(enter_dir)
     
-    # print(preview_buffer)
-
-
-    # preview_buffer = ""
-
-    # for y in range(len(distance_map)):
-    #     for x in range(len(distance_map[x])):
-    #         preview_buffer += str(distance_map[y][x])
-    #     preview_buffer += '\n'
-    
-    # print(preview_buffer)
-
-    #input()
-
-
+    _tag_tile_using_dir(exit_dir)
 
 
 print(int(i / 2))
 
-
 display_map(nice_map)
-
-import copy
-io_map = copy.deepcopy(distance_map)
-
-for y in range(len(io_map)):
-    for x in range(len(io_map[y])):
-        if nice_map[y][x] != " ":
-            io_map[y][x] = "P" if distance_map[y][x] >= 0 else " "
-        else:
-            io_map[y][x] = " "
-
-
-display_map(io_map)
-
-open_tiles_list = []
-
-for y in range(len(io_map)):
-    for x in range(len(io_map[0])):
-        curr_pos = (x, y)
-
-        if nice_map[y][x] == " ":
-            if x in [0, len(io_map[0])-1] or y in [0, len(io_map)-1]:
-                io_map[y][x] = "O"
-            else:
-                pipe_count_l = io_map[y][:x].count("P")
-                pipe_count_r = io_map[y][x+1:].count("P")
-
-                io_map_rot = list(zip(*io_map))
-
-                pipe_count_u = io_map_rot[x][:y].count("P")
-                pipe_count_d = io_map_rot[x][y+1:].count("P")
-
-                pipe_count = [pipe_count_l, pipe_count_r, pipe_count_u, pipe_count_d]
-
-                if 0 in pipe_count:
-                    io_map[y][x] = "O"
-                else:
-                    io_map[y][x] = "I" if len(list(filter(lambda c: c % 2 == 1, pipe_count))) else "O"
-                
-                #print(curr_pos, pipe_count, io_map[y][x])
-
-        if io_map[y][x] == "O":
-            open_tiles_list.append(curr_pos)
-                
-
-    #print(f"y={y}: {''.join(io_map[y])}")
-
-#for tile_pos in open_tiles_list:
-
 print()
+
 display_map(io_map)
+print()
 
 
 def fill(tile_map, start_tiles, fill_tile, replacable_tile):
@@ -221,16 +198,22 @@ def fill(tile_map, start_tiles, fill_tile, replacable_tile):
 
         for rx in range(-1, 2):
             for ry in range(-1, 2):
-                next_tile_pos = (tile_pos[0] + rx, tile_pos[1] + ry)
-                if next_tile_pos[0] > 0 and next_tile_pos[0] < len(tile_map[0])-1 and next_tile_pos[1] > 0 and next_tile_pos[1] < len(tile_map)-1:
-                    if tile_map[tile_pos[1] + ry][tile_pos[0] + rx] in replacable_tile:
-                        tile_map[tile_pos[1] + ry][tile_pos[0] + rx] = fill_tile
-                        next_tiles.append(next_tile_pos)
+                if rx != 0 and ry != 0:
+                    next_tile_pos = (tile_pos[0] + rx, tile_pos[1] + ry)
+                    if next_tile_pos[0] >= 0 and next_tile_pos[0] <= len(tile_map[0])-1 and next_tile_pos[1] >= 0 and next_tile_pos[1] <= len(tile_map)-1:
+                        if tile_map[next_tile_pos[1]][next_tile_pos[0]] in replacable_tile:
+                            tile_map[next_tile_pos[1]][next_tile_pos[0]] = fill_tile
+                            #_print(fill_tile, next_tile_pos[0], next_tile_pos[1])
+                            #time.sleep(0.05)
+                            #input()
+                            next_tiles.append(next_tile_pos)
+        
+        #display_map(tile_map)
 
 
 fill(io_map, open_tiles_list, "O", ["I"])
 
-print()
 display_map(io_map)
+print()
 
-print(list(itertools.chain(*io_map)).count("I"))
+print(f'\n[[{list(itertools.chain(*io_map)).count("I")}]]')
