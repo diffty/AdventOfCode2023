@@ -162,15 +162,22 @@ while not end_reached:
 
     i += 1
 
+# PART 1 RESULT
+print(int(i / 2))
+
+
+# PART 2
+def _tag_tile_at_pos(tile_pos):
+    if tile_pos[0] >= 0 and tile_pos[0] < len(tiles[0]) and tile_pos[1] >= 0 and tile_pos[1] < len(tiles) and io_map[tile_pos[1]][tile_pos[0]] != "P":
+        io_map[tile_pos[1]][tile_pos[0]] = "O"
+        open_tiles_list.append(tile_pos)
+
 
 def _tag_tile_using_dir(dir):
     right_dir = directions[(directions.index(dir) + 1) % len(directions)]
     right_pos = (curr_pos[0] + right_dir[0], curr_pos[1] + right_dir[1])
-
-    if right_pos[0] >= 0 and right_pos[0] < len(tiles[0]) and right_pos[1] >= 0 and right_pos[1] < len(tiles) and io_map[right_pos[1]][right_pos[0]] != "P":
-        io_map[right_pos[1]][right_pos[0]] = "O"
-        open_tiles_list.append(right_pos)
-
+    _tag_tile_at_pos(right_pos)
+    
 
 for tile_info in directions_list:
     curr_pos, enter_dir, exit_dir = tile_info
@@ -180,14 +187,22 @@ for tile_info in directions_list:
     
     _tag_tile_using_dir(exit_dir)
 
+    if enter_dir and enter_dir != exit_dir:
+        enter_right_dir = directions[(directions.index(enter_dir) + 1) % len(directions)]
+        exit_right_dir = directions[(directions.index(exit_dir) + 1) % len(directions)]
 
-print(int(i / 2))
+        lat_pos = (curr_pos[0] + enter_right_dir[0] + exit_right_dir[0], curr_pos[1] + enter_right_dir[1] + exit_right_dir[1])
+        _tag_tile_at_pos(lat_pos)
+
+
 
 display_map(nice_map)
 print()
+input()
 
 display_map(io_map)
 print()
+input()
 
 
 def fill(tile_map, start_tiles, fill_tile, replacable_tile):
